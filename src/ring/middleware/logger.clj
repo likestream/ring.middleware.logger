@@ -18,8 +18,33 @@
   (import (org.apache.log4j DailyRollingFileAppender EnhancedPatternLayout FileAppender)))
 
 ;; TODO: Facilities for easily modifying the default log file name and log level
-(def base-log-name "logs/ring.log")
-(def default-log-level :info)
+
+(def ^{:private true
+       :dynamic true}
+  *base-log-name*
+  (atom "logs/ring.log"))
+  
+(defn base-log-name
+  []
+  (deref *base-log-name*))
+
+(defn set-base-log-name!
+  [path-string]
+  (reset! *base-log-name* path-string))
+
+(def ^{:private true
+       :dynamic true}
+  *default-log-level*
+  (atom :info))
+  
+(defn default-log-level
+  []
+  (deref *default-log-level*))
+
+(defn set-default-log-level!
+  [level-keyword]
+  (reset! *default-log-level* level-keyword))
+
 
 ;; The generation of the calling class, line numbers, etc. is
 ;; extremely slow, and should be used only in development mode or for
@@ -52,14 +77,14 @@
   "This logging adapter rotates the logfile nightly at about midnight."
   (DailyRollingFileAppender.
    (EnhancedPatternLayout. production-log-prefix-format)
-   base-log-name
+   (base-log-name)
    ".yyyy-MM-dd"))
 
 (def appending-logger
   "This logging adapter simply appends new log lines to the existing logfile."
   (FileAppender.
    (EnhancedPatternLayout. production-log-prefix-format)
-   base-log-name
+   (base-log-name)
    true))
 
 (defn set-default-logger!
@@ -70,7 +95,7 @@
   If you want your entire application to use the r.m.l backend, use (set-default-root-logger!)"
 
      (log-config/set-logger! (str *ns*)
-                             :level default-log-level
+                             :level (default-log-level)
                              :out appending-logger))
   ([]
      "Allows the ring.middleware.logger backend to log for the calling context's namespace. Call this
@@ -90,7 +115,7 @@ the ring.middleware.logger logfile by default.
 
 Sets the default logger used by ring.middleware.logger to be the root
 logger for the application."
-     (set-default-root-logger! default-log-level)))
+     (set-default-root-logger! (default-log-level))))
 
 ;; Initialize a logging context for ring.middleware.logger.
 (set-default-logger!)
